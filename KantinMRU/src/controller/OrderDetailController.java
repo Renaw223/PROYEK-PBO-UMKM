@@ -18,7 +18,12 @@ public class OrderDetailController {
     
     // Constructor: ambil koneksi dari class Koneksi
     public OrderDetailController() {
-        conn = Koneksi.getConnection();
+        try {
+            conn = Koneksi.getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Gagal koneksi di OrderController: " + e.getMessage());
+        }
     }
     
     /*

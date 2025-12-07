@@ -90,6 +90,11 @@ public class FormLogin extends javax.swing.JFrame {
                 btnLoginActionPerformed(evt);
             }
         });
+        btnLogin.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                btnLoginKeyPressed(evt);
+            }
+        });
 
         btnRegister.setBackground(new java.awt.Color(212, 175, 55));
         btnRegister.setFont(new java.awt.Font("Arial", 0, 11)); // NOI18N
@@ -98,6 +103,11 @@ public class FormLogin extends javax.swing.JFrame {
         btnRegister.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnRegisterActionPerformed(evt);
+            }
+        });
+        btnRegister.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                btnRegisterKeyPressed(evt);
             }
         });
 
@@ -184,6 +194,29 @@ public class FormLogin extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
+        login();
+    }//GEN-LAST:event_btnLoginActionPerformed
+
+    private void btnRegisterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegisterActionPerformed
+        // TODO add your handling code here:
+        register();
+    }//GEN-LAST:event_btnRegisterActionPerformed
+
+    private void btnLoginKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnLoginKeyPressed
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+            login();
+        }
+    }//GEN-LAST:event_btnLoginKeyPressed
+
+    private void btnRegisterKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnRegisterKeyPressed
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+            register();
+        }   
+    }//GEN-LAST:event_btnRegisterKeyPressed
+
+    private void login() {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword());
         
@@ -206,10 +239,9 @@ public class FormLogin extends javax.swing.JFrame {
             lblMessage.setText("Username atau password salah!");
             txtPassword.setText("");
         }
-    }//GEN-LAST:event_btnLoginActionPerformed
-
-    private void btnRegisterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegisterActionPerformed
-        // TODO add your handling code here:
+    }
+    
+    private void register() {
         // new FormRegister().setVisible(true);
         // this.dispose();
         
@@ -218,8 +250,8 @@ public class FormLogin extends javax.swing.JFrame {
             "Form Register akan dibuat setelah ini",
             "Info",
             JOptionPane.INFORMATION_MESSAGE);
-    }//GEN-LAST:event_btnRegisterActionPerformed
-
+    }
+    
     /**
      * @param args the command line arguments
      */

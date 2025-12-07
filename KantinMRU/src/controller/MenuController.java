@@ -18,7 +18,12 @@ public class MenuController {
     
     // Constructor: ambil koneksi dari class Koneksi
     public MenuController() {
-        conn = Koneksi.getConnection();
+        try {
+            conn = Koneksi.getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Gagal koneksi di OrderController: " + e.getMessage());
+        }
     }
     
     /*
@@ -28,7 +33,7 @@ public class MenuController {
      */
     public ArrayList<Menu> getAllMenu() {
         ArrayList<Menu> list = new ArrayList<>();
-        String query = "SELECT * FROM menu ORDER BY kategori, nama_menu";
+        String query = "SELECT * FROM menu ORDER BY status ASC, kategori ASC, harga ASC";
         
         try {
             Statement st = conn.createStatement();

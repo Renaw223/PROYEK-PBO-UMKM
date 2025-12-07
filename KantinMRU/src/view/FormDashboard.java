@@ -8,12 +8,17 @@ import model.User;
 import javax.swing.JOptionPane;
 
 import controller.OrderController;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import model.Order;
 import java.util.ArrayList;
 import javax.swing.table.DefaultTableModel;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.text.SimpleDateFormat;
+import config.Koneksi;
+import model.Menu;
+import controller.MenuController;
 /**
  *
  * @author Renadi Wilantara
@@ -21,6 +26,7 @@ import java.text.SimpleDateFormat;
 public class FormDashboard extends javax.swing.JFrame {
     private User currentUser;
     private OrderController orderController;
+    private MenuController menuController;
     
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(FormDashboard.class.getName());
@@ -36,6 +42,7 @@ public class FormDashboard extends javax.swing.JFrame {
         
         // Inisialisasi controller
         orderController = new OrderController();
+        menuController = new MenuController();
         
         // Set form di tengah layar
         setLocationRelativeTo(null);
@@ -80,6 +87,7 @@ public class FormDashboard extends javax.swing.JFrame {
         
         // Load tabel order terbaru
         loadTabelOrderTerbaru();
+        loadTabelMenu();
     }
     
     /*
@@ -119,6 +127,32 @@ public class FormDashboard extends javax.swing.JFrame {
             });
             count++;
         }
+    }
+    
+    private void loadTabelMenu() {
+        DefaultTableModel model = (DefaultTableModel) tabelMenu.getModel();
+        model.setRowCount(0);
+        
+        ArrayList<Menu> Menus = menuController.getAllMenu();
+        
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        
+        int count = 0;
+        for (Menu menu : Menus) {
+            model.addRow(new Object[]{
+                menu.getId(),
+                menu.getNamaMenu(), 
+                menu.getKategori(),
+                formatRupiah.format(menu.getHarga()), 
+                menu.getStatus()
+            });
+            count++;
+        }
+        
+        tabelMenu.getColumnModel().getColumn(0).setMaxWidth(0);
+        tabelMenu.getColumnModel().getColumn(0).setMinWidth(0);
+        tabelMenu.getColumnModel().getColumn(0).setPreferredWidth(0);
+        tabelMenu.getColumnModel().getColumn(0).setWidth(0);
     }
     
     // Method untuk pindah antar card
@@ -171,6 +205,11 @@ public class FormDashboard extends javax.swing.JFrame {
         cardOrder = new javax.swing.JPanel();
         cardDaftarOrder = new javax.swing.JPanel();
         cardKelolaMenu = new javax.swing.JPanel();
+        scrollMenu = new javax.swing.JScrollPane();
+        tabelMenu = new javax.swing.JTable();
+        btnModifyMenu = new javax.swing.JButton();
+        btnDeleteMenu = new javax.swing.JButton();
+        btnAddMenu = new javax.swing.JButton();
         cardKelolaUser = new javax.swing.JPanel();
         cardLaporan = new javax.swing.JPanel();
 
@@ -482,6 +521,67 @@ public class FormDashboard extends javax.swing.JFrame {
         panelContent.add(cardDaftarOrder, "daftarOrder");
 
         cardKelolaMenu.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        scrollMenu.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                scrollMenuMouseClicked(evt);
+            }
+        });
+
+        tabelMenu.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "ID", "Nama", "Kategori", "Harga", "Status"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        scrollMenu.setViewportView(tabelMenu);
+
+        cardKelolaMenu.add(scrollMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 50, 670, 340));
+
+        btnModifyMenu.setText("Modify");
+        btnModifyMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnModifyMenuActionPerformed(evt);
+            }
+        });
+        cardKelolaMenu.add(btnModifyMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 400, -1, -1));
+
+        btnDeleteMenu.setText("Delete");
+        btnDeleteMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDeleteMenuActionPerformed(evt);
+            }
+        });
+        cardKelolaMenu.add(btnDeleteMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 400, -1, -1));
+
+        btnAddMenu.setText("Tambah menu");
+        btnAddMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnAddMenuActionPerformed(evt);
+            }
+        });
+        cardKelolaMenu.add(btnAddMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+
         panelContent.add(cardKelolaMenu, "kelolaMenu");
 
         cardKelolaUser.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -543,6 +643,248 @@ public class FormDashboard extends javax.swing.JFrame {
         showCard("dashboard");
     }//GEN-LAST:event_btnMenuDashboardActionPerformed
 
+    private void scrollMenuMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_scrollMenuMouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_scrollMenuMouseClicked
+
+    private void btnDeleteMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteMenuActionPerformed
+        // TODO add your handling code here:
+        int row = tabelMenu.getSelectedRow();
+        
+        if(row < 0) {
+            JOptionPane.showMessageDialog(this, "Pilih baris dulu");
+            return;
+        }
+       
+        tabelMenu.setRowSelectionInterval(row, row);
+                
+        int id = (Integer) tabelMenu.getValueAt(row, 0);
+        String nama = (String) tabelMenu.getValueAt(row, 1);
+        String kategori = (String) tabelMenu.getValueAt(row, 2);
+                
+        hapusMenu(id, nama, kategori);
+    }//GEN-LAST:event_btnDeleteMenuActionPerformed
+
+    private void btnModifyMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModifyMenuActionPerformed
+        // TODO add your handling code here:
+        int row = tabelMenu.getSelectedRow();
+        
+        if(row < 0) {
+            JOptionPane.showMessageDialog(this, "Pilih baris dulu");
+            return;
+        }
+       
+        tabelMenu.setRowSelectionInterval(row, row);
+                
+        int id = (Integer) tabelMenu.getValueAt(row, 0);
+        String nama = (String) tabelMenu.getValueAt(row, 1);
+        String kategori = (String) tabelMenu.getValueAt(row, 2);
+        String hargaStr = (String) tabelMenu.getValueAt(row, 3);
+        int harga = 0;
+        try {
+            NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+            Number parsed = formatRupiah.parse(hargaStr);
+            harga = parsed.intValue();  // hasil aman, tidak akan jadi + "00"
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal membaca harga: " + hargaStr);
+            return;
+        }
+        String status = (String) tabelMenu.getValueAt(row, 4);
+                
+        modifyMenu(id, nama, kategori, harga, status);
+    }//GEN-LAST:event_btnModifyMenuActionPerformed
+
+    private void btnAddMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddMenuActionPerformed
+        // TODO add your handling code here:
+        addMenu();
+    }//GEN-LAST:event_btnAddMenuActionPerformed
+
+    private void hapusMenu(int id, String nama, String kategori) {
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Hapus menu berikut?\n\n" +
+            "Nama: " + nama + "\n" +
+            "Kategori: " + kategori + "\n\n" +
+            "Tindakan ini tidak dapat dibatalkan!",
+            "Konfirmasi Hapus Mata Kuliah",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        String sql = "DELETE FROM menu " +
+                     "WHERE id = ? " +
+                     "AND nama_menu = ? " +
+                     "AND kategori = ? ";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try {
+            conn = Koneksi.getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, id);
+            stmt.setString(2, nama);
+            stmt.setString(3, kategori);
+
+            int result = stmt.executeUpdate();
+
+            if (result > 0) {
+                JOptionPane.showMessageDialog(this,
+                    "Menu berhasil dihapus!",
+                    "Sukses",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+                // Reload semua data yang terpengaruh
+
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Gagal menghapus menu!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            showError("Gagal hapus mata kuliah dari KRS", e);
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (Exception e) {}
+            try { if (conn != null) conn.close(); } catch (Exception e) {}
+            loadTabelMenu();
+        }
+    }
+    
+    private void modifyMenu(int id, String nama, String kategori, int harga, String status) {
+        javax.swing.JTextField txtNama = new javax.swing.JTextField(nama);
+        javax.swing.JComboBox<String> txtKategori = new javax.swing.JComboBox<>(new String[]{"makanan", "snack", "minumam", "box"});
+        txtKategori.setSelectedItem(kategori);
+        javax.swing.JTextField txtHarga = new javax.swing.JTextField(String.valueOf(harga));
+        javax.swing.JComboBox<String> cmbStatus = new javax.swing.JComboBox<>(new String[]{"tersedia", "habis"});
+        cmbStatus.setSelectedItem(status);
+
+        Object[] form = {
+            "Nama:", txtNama,
+            "Kategori:", txtKategori,
+            "Harga:", txtHarga,
+            "Status:", cmbStatus
+        };
+
+        int result = JOptionPane.showConfirmDialog(
+                this, 
+                form, 
+                "Modify Menu", 
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        // Get updated values
+        String newNama = txtNama.getText();
+        String newKategori = txtKategori.getSelectedItem().toString();
+        int newHarga = Integer.parseInt(txtHarga.getText());
+        String newStatus = cmbStatus.getSelectedItem().toString();
+
+        // Update DB
+        String sql = "UPDATE menu SET nama_menu=?, kategori=?, harga=?, status=? WHERE id=?";
+
+        try (Connection conn = Koneksi.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, newNama);
+            stmt.setString(2, newKategori);
+            stmt.setInt(3, newHarga);
+            stmt.setString(4, newStatus);
+            stmt.setInt(5, id);
+
+            stmt.executeUpdate();
+
+            JOptionPane.showMessageDialog(this, "Menu updated!");
+
+        } catch (Exception e) {
+            showError("Gagal update menu", e);
+        }
+        
+        loadTabelMenu();
+    }
+    
+    private void addMenu() {
+        // Create input fields
+        javax.swing.JTextField txtNama = new javax.swing.JTextField();
+        javax.swing.JComboBox<String> txtKategori = new javax.swing.JComboBox<>(new String[]{"makanan", "snack", "minuman", "box"});
+        javax.swing.JTextField txtHarga = new javax.swing.JTextField();
+        javax.swing.JComboBox<String> cmbStatus = new javax.swing.JComboBox<>(new String[]{"tersedia", "habis"});
+
+        Object[] form = {
+            "Nama:", txtNama,
+            "Kategori:", txtKategori,
+            "Harga:", txtHarga,
+            "Status:", cmbStatus
+        };
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                form,
+                "Tambah Menu",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        // Read values
+        String nama = txtNama.getText().trim();
+        String kategori = txtKategori.getSelectedItem().toString();
+        String hargaText = txtHarga.getText().trim();
+        String status = cmbStatus.getSelectedItem().toString();
+
+        // Basic validation
+        if (nama.isEmpty() || hargaText.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nama dan harga tidak boleh kosong!");
+            return;
+        }
+
+        int harga;
+        try {
+            harga = Integer.parseInt(hargaText);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Harga harus berupa angka!");
+            return;
+        }
+
+        // Insert into database
+        String sql = "INSERT INTO menu (nama_menu, kategori, harga, status) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = Koneksi.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nama);
+            stmt.setString(2, kategori);
+            stmt.setInt(3, harga);
+            stmt.setString(4, status);
+
+            stmt.executeUpdate();
+
+            JOptionPane.showMessageDialog(this, "Menu berhasil ditambahkan!");
+
+        } catch (Exception e) {
+            showError("Gagal tambah menu", e);
+        }
+
+        loadTabelMenu();
+    }
+    
+    private void showError(String message, Exception e) {
+        javax.swing.JOptionPane.showMessageDialog(this,
+            message + "\n\n" + e.getMessage(),
+            "Database Error",
+            javax.swing.JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -569,6 +911,8 @@ public class FormDashboard extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnAddMenu;
+    private javax.swing.JButton btnDeleteMenu;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnMenuDaftarOrder;
     private javax.swing.JButton btnMenuDashboard;
@@ -576,6 +920,7 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JButton btnMenuKelolaUser;
     private javax.swing.JButton btnMenuLaporan;
     private javax.swing.JButton btnMenuOrder;
+    private javax.swing.JButton btnModifyMenu;
     private javax.swing.JPanel cardDaftarOrder;
     private javax.swing.JPanel cardDashboard;
     private javax.swing.JPanel cardKelolaMenu;
@@ -601,6 +946,8 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel panelStatDiproses;
     private javax.swing.JPanel panelStatOrder;
     private javax.swing.JPanel panelStatPendapatan;
+    private javax.swing.JScrollPane scrollMenu;
+    private javax.swing.JTable tabelMenu;
     private javax.swing.JTable tblDashboardOrder;
     // End of variables declaration//GEN-END:variables
 }
