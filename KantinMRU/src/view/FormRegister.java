@@ -106,6 +106,11 @@ public class FormRegister extends javax.swing.JFrame {
                 btnDaftarActionPerformed(evt);
             }
         });
+        btnDaftar.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                btnDaftarKeyPressed(evt);
+            }
+        });
 
         btnLogin.setBackground(new java.awt.Color(212, 175, 55));
         btnLogin.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
@@ -115,6 +120,11 @@ public class FormRegister extends javax.swing.JFrame {
         btnLogin.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnLoginActionPerformed(evt);
+            }
+        });
+        btnLogin.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                btnLoginKeyPressed(evt);
             }
         });
 
@@ -160,9 +170,9 @@ public class FormRegister extends javax.swing.JFrame {
                 .addComponent(btnLogin)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(panelFormLayout.createSequentialGroup()
-                .addGap(49, 49, 49)
-                .addComponent(lblMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap()
+                .addComponent(lblMessage, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
         panelFormLayout.setVerticalGroup(
             panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -192,8 +202,8 @@ public class FormRegister extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(btnLogin)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(lblMessage)
-                .addContainerGap(25, Short.MAX_VALUE))
+                .addComponent(lblMessage, javax.swing.GroupLayout.DEFAULT_SIZE, 19, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         javax.swing.GroupLayout panelMainLayout = new javax.swing.GroupLayout(panelMain);
@@ -228,6 +238,32 @@ public class FormRegister extends javax.swing.JFrame {
 
     private void btnDaftarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDaftarActionPerformed
         // TODO add your handling code here:
+        register();
+    }//GEN-LAST:event_btnDaftarActionPerformed
+
+    private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
+        // TODO add your handling code here:
+        // Pindah ke form login
+        new FormLogin().setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_btnLoginActionPerformed
+
+    private void btnDaftarKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnDaftarKeyPressed
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+            register();
+        }   
+    }//GEN-LAST:event_btnDaftarKeyPressed
+
+    private void btnLoginKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnLoginKeyPressed
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+            new FormLogin().setVisible(true);
+            this.dispose();
+        } 
+    }//GEN-LAST:event_btnLoginKeyPressed
+
+    private void register(){
         // Ambil input dari form
         String nama = txtNama.getText().trim();
         String username = txtUsername.getText().trim();
@@ -286,15 +322,7 @@ public class FormRegister extends javax.swing.JFrame {
         } else {
             lblMessage.setText("Gagal mendaftar! Coba lagi.");
         }
-    }//GEN-LAST:event_btnDaftarActionPerformed
-
-    private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
-        // TODO add your handling code here:
-        // Pindah ke form login
-        new FormLogin().setVisible(true);
-        this.dispose();
-    }//GEN-LAST:event_btnLoginActionPerformed
-
+    }
     /**
      * @param args the command line arguments
      */

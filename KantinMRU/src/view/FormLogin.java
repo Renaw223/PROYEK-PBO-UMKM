@@ -118,25 +118,6 @@ public class FormLogin extends javax.swing.JFrame {
         panelForm.setLayout(panelFormLayout);
         panelFormLayout.setHorizontalGroup(
             panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelFormLayout.createSequentialGroup()
-                .addGroup(panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(panelFormLayout.createSequentialGroup()
-                        .addGap(52, 52, 52)
-                        .addGroup(panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(panelFormLayout.createSequentialGroup()
-                                .addGap(67, 67, 67)
-                                .addComponent(lblSubtitle))
-                            .addComponent(lblPassword)
-                            .addComponent(lblUsername)
-                            .addComponent(txtUsername)
-                            .addComponent(txtPassword, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)))
-                    .addGroup(panelFormLayout.createSequentialGroup()
-                        .addGap(84, 84, 84)
-                        .addComponent(lblTitle))
-                    .addGroup(panelFormLayout.createSequentialGroup()
-                        .addGap(139, 139, 139)
-                        .addComponent(lblMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelFormLayout.createSequentialGroup()
                 .addGap(0, 81, Short.MAX_VALUE)
                 .addGroup(panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -146,6 +127,28 @@ public class FormLogin extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelFormLayout.createSequentialGroup()
                         .addComponent(btnRegister)
                         .addGap(102, 102, 102))))
+            .addGroup(panelFormLayout.createSequentialGroup()
+                .addGroup(panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelFormLayout.createSequentialGroup()
+                        .addGroup(panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(panelFormLayout.createSequentialGroup()
+                                .addGap(52, 52, 52)
+                                .addGroup(panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addGroup(panelFormLayout.createSequentialGroup()
+                                        .addGap(67, 67, 67)
+                                        .addComponent(lblSubtitle))
+                                    .addComponent(lblPassword)
+                                    .addComponent(lblUsername)
+                                    .addComponent(txtUsername)
+                                    .addComponent(txtPassword, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)))
+                            .addGroup(panelFormLayout.createSequentialGroup()
+                                .addGap(84, 84, 84)
+                                .addComponent(lblTitle)))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(panelFormLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(lblMessage, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         panelFormLayout.setVerticalGroup(
             panelFormLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -199,8 +202,7 @@ public class FormLogin extends javax.swing.JFrame {
 
     private void btnRegisterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegisterActionPerformed
         // TODO add your handling code here:
-        new FormRegister().setVisible(true);
-        this.dispose();
+        register();
     }//GEN-LAST:event_btnRegisterActionPerformed
 
     private void btnLoginKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnLoginKeyPressed
@@ -243,14 +245,8 @@ public class FormLogin extends javax.swing.JFrame {
     }
     
     private void register() {
-        // new FormRegister().setVisible(true);
-        // this.dispose();
-        
-        // Sementara tampilkan pesan
-        JOptionPane.showMessageDialog(this,
-            "Form Register akan dibuat setelah ini",
-            "Info",
-            JOptionPane.INFORMATION_MESSAGE);
+        new FormRegister().setVisible(true);
+        this.dispose();
     }
     
     /**
