@@ -64,7 +64,7 @@ public class UserController {
      */
     public ArrayList<User> getAllUsers() {
         ArrayList<User> list = new ArrayList<>();
-        String query = "SELECT * FROM users ORDER BY id";
+        String query = "SELECT * FROM users ORDER BY role ASC, id ASC";
         
         try {
             Statement st = conn.createStatement();

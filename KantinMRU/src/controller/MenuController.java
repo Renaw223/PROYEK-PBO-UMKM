@@ -33,7 +33,7 @@ public class MenuController {
      */
     public ArrayList<Menu> getAllMenu() {
         ArrayList<Menu> list = new ArrayList<>();
-        String query = "SELECT * FROM menu ORDER BY status ASC, kategori ASC, harga ASC";
+        String query = "SELECT * FROM menu ORDER BY status ASC, kategori ASC, harga ASC, id ASC";
         
         try {
             Statement st = conn.createStatement();

@@ -19,6 +19,8 @@ import java.text.SimpleDateFormat;
 import config.Koneksi;
 import model.Menu;
 import controller.MenuController;
+import model.User;
+import controller.UserController;
 /**
  *
  * @author Renadi Wilantara
@@ -27,6 +29,7 @@ public class FormDashboard extends javax.swing.JFrame {
     private User currentUser;
     private OrderController orderController;
     private MenuController menuController;
+    private UserController userController;
     
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(FormDashboard.class.getName());
@@ -43,6 +46,7 @@ public class FormDashboard extends javax.swing.JFrame {
         // Inisialisasi controller
         orderController = new OrderController();
         menuController = new MenuController();
+        userController = new UserController();
         
         // Set form di tengah layar
         setLocationRelativeTo(null);
@@ -88,6 +92,7 @@ public class FormDashboard extends javax.swing.JFrame {
         // Load tabel order terbaru
         loadTabelOrderTerbaru();
         loadTabelMenu();
+        loadTabelUser();
     }
     
     /*
@@ -155,6 +160,32 @@ public class FormDashboard extends javax.swing.JFrame {
         tabelMenu.getColumnModel().getColumn(0).setWidth(0);
     }
     
+    private void loadTabelUser() {
+        DefaultTableModel model = (DefaultTableModel) tabelUser.getModel();
+        model.setRowCount(0);
+        
+        ArrayList<User> Users = userController.getAllUsers();
+        
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        
+        int count = 0;
+        for (User user : Users) {
+            model.addRow(new Object[]{
+                user.getId(),
+                user.getUsername(), 
+                user.getPassword(),
+                user.getNama(), 
+                user.getRole()
+            });
+            count++;
+        }
+        
+        tabelUser.getColumnModel().getColumn(0).setMaxWidth(0);
+        tabelUser.getColumnModel().getColumn(0).setMinWidth(0);
+        tabelUser.getColumnModel().getColumn(0).setPreferredWidth(0);
+        tabelUser.getColumnModel().getColumn(0).setWidth(0);
+    }
+    
     // Method untuk pindah antar card
     private void showCard(String cardName) {
         java.awt.CardLayout cl = (java.awt.CardLayout) panelContent.getLayout();
@@ -205,12 +236,17 @@ public class FormDashboard extends javax.swing.JFrame {
         cardOrder = new javax.swing.JPanel();
         cardDaftarOrder = new javax.swing.JPanel();
         cardKelolaMenu = new javax.swing.JPanel();
+        btnAddMenu = new javax.swing.JButton();
         scrollMenu = new javax.swing.JScrollPane();
         tabelMenu = new javax.swing.JTable();
-        btnModifyMenu = new javax.swing.JButton();
         btnDeleteMenu = new javax.swing.JButton();
-        btnAddMenu = new javax.swing.JButton();
+        btnModifyMenu = new javax.swing.JButton();
         cardKelolaUser = new javax.swing.JPanel();
+        btnAddUser = new javax.swing.JButton();
+        scrollUser = new javax.swing.JScrollPane();
+        tabelUser = new javax.swing.JTable();
+        btnDeleteUser = new javax.swing.JButton();
+        btnModifyUser = new javax.swing.JButton();
         cardLaporan = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -522,6 +558,14 @@ public class FormDashboard extends javax.swing.JFrame {
 
         cardKelolaMenu.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
+        btnAddMenu.setText("Tambah menu");
+        btnAddMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnAddMenuActionPerformed(evt);
+            }
+        });
+        cardKelolaMenu.add(btnAddMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+
         scrollMenu.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 scrollMenuMouseClicked(evt);
@@ -558,14 +602,6 @@ public class FormDashboard extends javax.swing.JFrame {
 
         cardKelolaMenu.add(scrollMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 50, 670, 340));
 
-        btnModifyMenu.setText("Modify");
-        btnModifyMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnModifyMenuActionPerformed(evt);
-            }
-        });
-        cardKelolaMenu.add(btnModifyMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 400, -1, -1));
-
         btnDeleteMenu.setText("Delete");
         btnDeleteMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -574,17 +610,72 @@ public class FormDashboard extends javax.swing.JFrame {
         });
         cardKelolaMenu.add(btnDeleteMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 400, -1, -1));
 
-        btnAddMenu.setText("Tambah menu");
-        btnAddMenu.addActionListener(new java.awt.event.ActionListener() {
+        btnModifyMenu.setText("Modify");
+        btnModifyMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnAddMenuActionPerformed(evt);
+                btnModifyMenuActionPerformed(evt);
             }
         });
-        cardKelolaMenu.add(btnAddMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+        cardKelolaMenu.add(btnModifyMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 400, -1, -1));
 
         panelContent.add(cardKelolaMenu, "kelolaMenu");
 
         cardKelolaUser.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnAddUser.setText("Tambah User");
+        btnAddUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnAddUserActionPerformed(evt);
+            }
+        });
+        cardKelolaUser.add(btnAddUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+
+        tabelUser.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "ID", "Username", "Password", "Nama", "Role"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, true, true
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        scrollUser.setViewportView(tabelUser);
+
+        cardKelolaUser.add(scrollUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(2, 50, 670, 340));
+
+        btnDeleteUser.setText("Delete");
+        btnDeleteUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDeleteUserActionPerformed(evt);
+            }
+        });
+        cardKelolaUser.add(btnDeleteUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 400, -1, -1));
+
+        btnModifyUser.setText("Modify");
+        btnModifyUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnModifyUserActionPerformed(evt);
+            }
+        });
+        cardKelolaUser.add(btnModifyUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 400, -1, -1));
+
         panelContent.add(cardKelolaUser, "kelolaUser");
 
         cardLaporan.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -700,6 +791,50 @@ public class FormDashboard extends javax.swing.JFrame {
         addMenu();
     }//GEN-LAST:event_btnAddMenuActionPerformed
 
+    private void btnAddUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddUserActionPerformed
+        // TODO add your handling code here:
+        addUser();
+    }//GEN-LAST:event_btnAddUserActionPerformed
+
+    private void btnDeleteUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteUserActionPerformed
+        // TODO add your handling code here:
+        int row = tabelUser.getSelectedRow();
+        
+        if(row < 0) {
+            JOptionPane.showMessageDialog(this, "Pilih baris dulu");
+            return;
+        }
+       
+        tabelUser.setRowSelectionInterval(row, row);
+                
+        int id = (Integer) tabelUser.getValueAt(row, 0);
+        String un = (String) tabelUser.getValueAt(row, 1);
+        String pass = (String) tabelUser.getValueAt(row, 2);
+        String nama = (String) tabelUser.getValueAt(row, 3);
+                
+        hapusUser(id, un, pass, nama);
+    }//GEN-LAST:event_btnDeleteUserActionPerformed
+
+    private void btnModifyUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModifyUserActionPerformed
+        // TODO add your handling code here:
+        int row = tabelUser.getSelectedRow();
+        
+        if(row < 0) {
+            JOptionPane.showMessageDialog(this, "Pilih baris dulu");
+            return;
+        }
+       
+        tabelUser.setRowSelectionInterval(row, row);
+                
+        int id = (int) tabelUser.getValueAt(row, 0);
+        String un = (String) tabelUser.getValueAt(row, 1);
+        String pass = (String) tabelUser.getValueAt(row, 2);
+        String nama = (String) tabelUser.getValueAt(row, 3);
+        String role = (String) tabelUser.getValueAt(row, 4);
+                
+        modifyUser(id, un, pass, nama, role);
+    }//GEN-LAST:event_btnModifyUserActionPerformed
+
     private void hapusMenu(int id, String nama, String kategori) {
         int confirm = JOptionPane.showConfirmDialog(this,
             "Hapus menu berikut?\n\n" +
@@ -736,9 +871,6 @@ public class FormDashboard extends javax.swing.JFrame {
                     "Menu berhasil dihapus!",
                     "Sukses",
                     JOptionPane.INFORMATION_MESSAGE);
-
-                // Reload semua data yang terpengaruh
-
             } else {
                 JOptionPane.showMessageDialog(this,
                     "Gagal menghapus menu!",
@@ -747,7 +879,7 @@ public class FormDashboard extends javax.swing.JFrame {
             }
 
         } catch (Exception e) {
-            showError("Gagal hapus mata kuliah dari KRS", e);
+            showError("Gagal hapus menu", e);
         } finally {
             try { if (stmt != null) stmt.close(); } catch (Exception e) {}
             try { if (conn != null) conn.close(); } catch (Exception e) {}
@@ -781,13 +913,11 @@ public class FormDashboard extends javax.swing.JFrame {
             return;
         }
 
-        // Get updated values
         String newNama = txtNama.getText();
         String newKategori = txtKategori.getSelectedItem().toString();
         int newHarga = Integer.parseInt(txtHarga.getText());
         String newStatus = cmbStatus.getSelectedItem().toString();
 
-        // Update DB
         String sql = "UPDATE menu SET nama_menu=?, kategori=?, harga=?, status=? WHERE id=?";
 
         try (Connection conn = Koneksi.getConnection();
@@ -811,7 +941,6 @@ public class FormDashboard extends javax.swing.JFrame {
     }
     
     private void addMenu() {
-        // Create input fields
         javax.swing.JTextField txtNama = new javax.swing.JTextField();
         javax.swing.JComboBox<String> txtKategori = new javax.swing.JComboBox<>(new String[]{"makanan", "snack", "minuman", "box"});
         javax.swing.JTextField txtHarga = new javax.swing.JTextField();
@@ -835,15 +964,13 @@ public class FormDashboard extends javax.swing.JFrame {
             return;
         }
 
-        // Read values
         String nama = txtNama.getText().trim();
         String kategori = txtKategori.getSelectedItem().toString();
         String hargaText = txtHarga.getText().trim();
         String status = cmbStatus.getSelectedItem().toString();
 
-        // Basic validation
-        if (nama.isEmpty() || hargaText.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nama dan harga tidak boleh kosong!");
+        if (nama.isEmpty() || kategori.isEmpty() || hargaText.isEmpty() || status.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Harus isi semua data!");
             return;
         }
 
@@ -855,7 +982,6 @@ public class FormDashboard extends javax.swing.JFrame {
             return;
         }
 
-        // Insert into database
         String sql = "INSERT INTO menu (nama_menu, kategori, harga, status) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = Koneksi.getConnection();
@@ -875,6 +1001,167 @@ public class FormDashboard extends javax.swing.JFrame {
         }
 
         loadTabelMenu();
+    }
+    
+    private void hapusUser(int id, String un, String pass, String nama) {
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Hapus user berikut?\n\n" +
+            "Username: " + un + "\n" +
+            "Password: " + pass + "\n" +
+            "Nama: " + nama + "\n\n" +
+            "Tindakan ini tidak dapat dibatalkan!",
+            "Konfirmasi Hapus User",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        String sql = "DELETE FROM users " +
+                     "WHERE id = ? " +
+                     "AND username = ? " +
+                     "AND password = ? " +
+                     "AND nama = ?";
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try {
+            conn = Koneksi.getConnection();
+            stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, id);
+            stmt.setString(2, un);
+            stmt.setString(3, pass);
+            stmt.setString(4, nama);
+
+            int result = stmt.executeUpdate();
+
+            if (result > 0) {
+                JOptionPane.showMessageDialog(this,
+                    "User berhasil dihapus!",
+                    "Sukses",
+                    JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Gagal menghapus user!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            showError("Gagal hapus user", e);
+        } finally {
+            try { if (stmt != null) stmt.close(); } catch (Exception e) {}
+            try { if (conn != null) conn.close(); } catch (Exception e) {}
+            loadTabelUser();
+        }
+    }
+    
+    private void modifyUser(int id, String un, String pass, String nama, String role) {
+        javax.swing.JTextField txtUn = new javax.swing.JTextField(un);
+        javax.swing.JTextField txtPass = new javax.swing.JTextField(pass);
+        javax.swing.JTextField txtNama = new javax.swing.JTextField(nama);
+        javax.swing.JComboBox<String> cmbRole = new javax.swing.JComboBox<>(new String[]{"admin", "pembeli"});
+        cmbRole.setSelectedItem(role);
+
+        Object[] form = {
+            "Username:", txtUn, 
+            "Password:", txtPass, 
+            "Nama:", txtNama, 
+            "Role: ", cmbRole
+        };
+
+        int result = JOptionPane.showConfirmDialog(
+                this, 
+                form, 
+                "Modify User", 
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String newUn = txtUn.getText();
+        String newPass = txtPass.getText();
+        String newNama = txtNama.getText();
+        String newRole = cmbRole.getSelectedItem().toString();
+
+        String sql = "UPDATE users SET username=?, password=?, nama=?, role=? WHERE id=?";
+
+        try (Connection conn = Koneksi.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, newUn);
+            stmt.setString(2, newPass);
+            stmt.setString(3, newNama);
+            stmt.setString(4, newRole);
+            stmt.setInt(5, id);
+
+            stmt.executeUpdate();
+
+            JOptionPane.showMessageDialog(this, "User updated!");
+        } catch (Exception e) {
+            showError("Gagal update user", e);
+        }
+        
+        loadTabelUser();
+    }
+    private void addUser() {
+        javax.swing.JTextField txtUn = new javax.swing.JTextField();
+        javax.swing.JTextField txtPass = new javax.swing.JTextField();
+        javax.swing.JTextField txtNama = new javax.swing.JTextField();
+        javax.swing.JComboBox<String> cmbRole = new javax.swing.JComboBox<>(new String[]{"admin", "pembeli"});
+        cmbRole.setSelectedItem("pembeli");
+
+        Object[] form = {
+            "Username:", txtUn, 
+            "Password:", txtPass, 
+            "Nama:", txtNama, 
+            "Role: ", cmbRole
+        };
+
+        int result = JOptionPane.showConfirmDialog(
+                this, 
+                form, 
+                "Modify User", 
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String un = txtUn.getText().trim();
+        String pass = txtPass.getText().trim();
+        String nama = txtNama.getText().trim();
+        String role = cmbRole.getSelectedItem().toString();
+
+        if (un.isEmpty() || pass.isEmpty() || nama.isEmpty() || role.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Harus isi semua data!");
+            return;
+        }
+
+        String sql = "INSERT INTO users (username, password, nama, role) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = Koneksi.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, un);
+            stmt.setString(2, pass);
+            stmt.setString(3, nama);
+            stmt.setString(4, role);
+
+            stmt.executeUpdate();
+
+            JOptionPane.showMessageDialog(this, "User berhasil ditambahkan!");
+
+        } catch (Exception e) {
+            showError("Gagal tambah user", e);
+        }
+
+        loadTabelUser();
     }
     
     private void showError(String message, Exception e) {
@@ -912,7 +1199,9 @@ public class FormDashboard extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAddMenu;
+    private javax.swing.JButton btnAddUser;
     private javax.swing.JButton btnDeleteMenu;
+    private javax.swing.JButton btnDeleteUser;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnMenuDaftarOrder;
     private javax.swing.JButton btnMenuDashboard;
@@ -921,6 +1210,7 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JButton btnMenuLaporan;
     private javax.swing.JButton btnMenuOrder;
     private javax.swing.JButton btnModifyMenu;
+    private javax.swing.JButton btnModifyUser;
     private javax.swing.JPanel cardDaftarOrder;
     private javax.swing.JPanel cardDashboard;
     private javax.swing.JPanel cardKelolaMenu;
@@ -947,7 +1237,9 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel panelStatOrder;
     private javax.swing.JPanel panelStatPendapatan;
     private javax.swing.JScrollPane scrollMenu;
+    private javax.swing.JScrollPane scrollUser;
     private javax.swing.JTable tabelMenu;
+    private javax.swing.JTable tabelUser;
     private javax.swing.JTable tblDashboardOrder;
     // End of variables declaration//GEN-END:variables
 }
