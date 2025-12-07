@@ -122,6 +122,7 @@ public class FormDashboard extends javax.swing.JFrame {
         loadTabelOrderTerbaru();
         loadTabelMenu();
         loadTabelUser();
+        loadLaporan();
     }
     
     /*
@@ -213,6 +214,7 @@ public class FormDashboard extends javax.swing.JFrame {
         tabelUser.getColumnModel().getColumn(0).setMinWidth(0);
         tabelUser.getColumnModel().getColumn(0).setPreferredWidth(0);
         tabelUser.getColumnModel().getColumn(0).setWidth(0);
+    }
 
     /*
      * Load data menu ke tblMenu berdasarkan kategori
@@ -238,6 +240,11 @@ public class FormDashboard extends javax.swing.JFrame {
                 formatRupiah.format(menu.getHarga())
             });
         }
+        
+        tblMenu.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblMenu.getColumnModel().getColumn(0).setMinWidth(0);
+        tblMenu.getColumnModel().getColumn(0).setPreferredWidth(0);
+        tblMenu.getColumnModel().getColumn(0).setWidth(0);
     }
     
     /*
@@ -275,9 +282,37 @@ public class FormDashboard extends javax.swing.JFrame {
         // Kosongkan tabel detail
         DefaultTableModel modelDetail = (DefaultTableModel) tblDetailOrder.getModel();
         modelDetail.setRowCount(0);
+        
+        tblDaftarOrder.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblDaftarOrder.getColumnModel().getColumn(0).setMinWidth(0);
+        tblDaftarOrder.getColumnModel().getColumn(0).setPreferredWidth(0);
+        tblDaftarOrder.getColumnModel().getColumn(0).setWidth(0);
     }
     
-    
+    private void loadLaporan() {
+        DefaultTableModel model = (DefaultTableModel) tabelLaporan.getModel();
+        model.setRowCount(0);
+        
+        ArrayList<Order> orders = orderController.getOrderLunasDanSelesai();
+        
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        
+        int total = 0;
+        for(Order order : orders) {
+            total += order.getTotalHarga();
+            model.addRow(new Object[]{
+                order.getNamaPembeli(),
+                order.getNomorOrder(),
+                order.getLokasiPelanggan(),
+                formatRupiah.format(order.getTotalHarga())
+            });
+        }
+        
+        String totalStr = formatRupiah.format(total);
+        
+        fieldTotal.setEnabled(false);
+        fieldTotal.setText(totalStr);
+    }
     
     /*
      * Setup komponen di cardOrder
@@ -330,6 +365,11 @@ public class FormDashboard extends javax.swing.JFrame {
         
         // Update label total
         lblTotalHarga.setText(formatRupiah.format(totalHarga));
+        
+        tblKeranjang.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblKeranjang.getColumnModel().getColumn(0).setMinWidth(0);
+        tblKeranjang.getColumnModel().getColumn(0).setPreferredWidth(0);
+        tblKeranjang.getColumnModel().getColumn(0).setWidth(0);
     }
     
     /*
@@ -440,6 +480,10 @@ public class FormDashboard extends javax.swing.JFrame {
         btnDeleteUser = new javax.swing.JButton();
         btnModifyUser = new javax.swing.JButton();
         cardLaporan = new javax.swing.JPanel();
+        scrollLaporan = new javax.swing.JScrollPane();
+        tabelLaporan = new javax.swing.JTable();
+        labelTotal = new javax.swing.JLabel();
+        fieldTotal = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -1132,6 +1176,44 @@ public class FormDashboard extends javax.swing.JFrame {
         panelContent.add(cardKelolaUser, "kelolaUser");
 
         cardLaporan.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        tabelLaporan.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Nama", "Nomor", "Lokasi", "Sub-Total"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        scrollLaporan.setViewportView(tabelLaporan);
+
+        cardLaporan.add(scrollLaporan, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 690, 330));
+
+        labelTotal.setFont(new java.awt.Font("Segoe UI", 0, 48)); // NOI18N
+        labelTotal.setText("Total:");
+        cardLaporan.add(labelTotal, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 340, -1, -1));
+
+        fieldTotal.setFont(new java.awt.Font("Segoe UI", 0, 48)); // NOI18N
+        cardLaporan.add(fieldTotal, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 340, 540, 70));
+
         panelContent.add(cardLaporan, "laporan");
 
         getContentPane().add(panelContent, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 110, 670, 440));
@@ -1901,15 +1983,12 @@ public class FormDashboard extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-
     private javax.swing.JButton btnAddMenu;
     private javax.swing.JButton btnAddUser;
     private javax.swing.JButton btnDeleteMenu;
     private javax.swing.JButton btnDeleteUser;
-
     private javax.swing.JButton btnHapusItem;
     private javax.swing.JButton btnLihatDetail;
-
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnMenuDaftarOrder;
     private javax.swing.JButton btnMenuDashboard;
@@ -1917,16 +1996,13 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JButton btnMenuKelolaUser;
     private javax.swing.JButton btnMenuLaporan;
     private javax.swing.JButton btnMenuOrder;
-
     private javax.swing.JButton btnModifyMenu;
     private javax.swing.JButton btnModifyUser;
-
     private javax.swing.JButton btnRefreshOrder;
     private javax.swing.JButton btnSubmitOrder;
     private javax.swing.JButton btnTambahKeranjang;
     private javax.swing.JButton btnTandaiLunas;
     private javax.swing.JButton btnTandaiSelesai;
-
     private javax.swing.JPanel cardDaftarOrder;
     private javax.swing.JPanel cardDashboard;
     private javax.swing.JPanel cardKelolaMenu;
@@ -1935,6 +2011,7 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel cardOrder;
     private javax.swing.JComboBox<String> cmbKategori;
     private javax.swing.JComboBox<String> cmbLokasi;
+    private javax.swing.JTextField fieldTotal;
     private javax.swing.JButton jButton4;
     private javax.swing.JScrollBar jScrollBar1;
     private javax.swing.JScrollPane jScrollPane1;
@@ -1942,6 +2019,7 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
+    private javax.swing.JLabel labelTotal;
     private javax.swing.JLabel lblAtau;
     private javax.swing.JLabel lblDaftarOrderTitle;
     private javax.swing.JLabel lblDashSubtitle;
@@ -1970,15 +2048,14 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel panelStatDiproses;
     private javax.swing.JPanel panelStatOrder;
     private javax.swing.JPanel panelStatPendapatan;
-
+    private javax.swing.JScrollPane scrollLaporan;
     private javax.swing.JScrollPane scrollMenu;
     private javax.swing.JScrollPane scrollUser;
+    private javax.swing.JSpinner spinJumlah;
+    private javax.swing.JTable tabelLaporan;
     private javax.swing.JTable tabelMenu;
     private javax.swing.JTable tabelUser;
-
-    private javax.swing.JSpinner spinJumlah;
     private javax.swing.JTable tblDaftarOrder;
-
     private javax.swing.JTable tblDashboardOrder;
     private javax.swing.JTable tblDetailOrder;
     private javax.swing.JTable tblKeranjang;

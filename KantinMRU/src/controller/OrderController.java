@@ -332,4 +332,36 @@ public class OrderController {
         
         return jumlah;
     }
+        
+    public ArrayList<Order> getOrderLunasDanSelesai() {
+        ArrayList<Order> list = new ArrayList<>();
+        String query = "SELECT o.*, u.nama as nama_pembeli FROM orders o " +
+                       "JOIN users u ON o.id_user = u.id " +
+                       "WHERE o.status_order = 'selesai' " +
+                       "AND o.status_bayar = 'lunas' " +
+                       "ORDER BY o.created_at ASC";
+        
+        try {
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery(query);
+            
+            while (rs.next()) {
+                Order order = new Order();
+                order.setId(rs.getInt("id"));
+                order.setNomorOrder(rs.getString("nomor_order"));
+                order.setLokasiPelanggan(rs.getString("lokasi_pelanggan"));
+                order.setTotalHarga(rs.getInt("total_harga"));
+                order.setStatusBayar(rs.getString("status_bayar"));
+                order.setStatusOrder(rs.getString("status_order"));
+                order.setIdUser(rs.getInt("id_user"));
+                order.setCreatedAt(rs.getTimestamp("created_at"));
+                order.setNamaPembeli(rs.getString("nama_pembeli"));
+                list.add(order);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error get orders diproses: " + e.getMessage());
+        }
+        
+        return list;
+    }
 }
