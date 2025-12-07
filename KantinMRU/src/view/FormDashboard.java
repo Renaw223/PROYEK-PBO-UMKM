@@ -16,11 +16,21 @@ import javax.swing.table.DefaultTableModel;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.text.SimpleDateFormat;
+
 import config.Koneksi;
 import model.Menu;
 import controller.MenuController;
 import model.User;
 import controller.UserController;
+
+
+import controller.MenuController;
+import controller.OrderDetailController;
+import model.Menu;
+import model.OrderDetail;
+
+
+
 /**
  *
  * @author Renadi Wilantara
@@ -29,8 +39,15 @@ public class FormDashboard extends javax.swing.JFrame {
     private User currentUser;
     private OrderController orderController;
     private MenuController menuController;
+
     private UserController userController;
+
+    private OrderDetailController orderDetailController;
+
     
+    // ArrayList untuk menyimpan item keranjang sementara
+    private ArrayList<OrderDetail> keranjang;
+    private int totalHarga;
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(FormDashboard.class.getName());
 
@@ -40,37 +57,49 @@ public class FormDashboard extends javax.swing.JFrame {
     public FormDashboard() {
         initComponents();
         
-        // Ambil data user yang login
         currentUser = FormLogin.loggedInUser;
         
         // Inisialisasi controller
         orderController = new OrderController();
         menuController = new MenuController();
+
         userController = new UserController();
+
+        orderDetailController = new OrderDetailController();
         
-        // Set form di tengah layar
+        // Inisialisasi keranjang
+        keranjang = new ArrayList<>();
+        totalHarga = 0;
+
+        
         setLocationRelativeTo(null);
         setTitle("Dashboard - Kantin MRU");
         
-        // Tampilkan nama user
         lblWelcome.setText("Selamat datang, " + currentUser.getNama() + "!");
         
-        // Cek role, sembunyikan menu admin jika pembeli
         if (currentUser.getRole().equals("pembeli")) {
             btnMenuKelolaMenu.setVisible(false);
             btnMenuKelolaUser.setVisible(false);
             btnMenuLaporan.setVisible(false);
-            
-            // Sembunyikan card pendapatan untuk pembeli
             panelStatPendapatan.setVisible(false);
         }
         
         // Load data dashboard
         loadDashboardData();
         
-        // Tampilkan card dashboard sebagai default
+        // Setup cardOrder (isi combobox, load menu)
+        setupCardOrder();
+        
+        // Sembunyikan tombol admin di cardDaftarOrder jika pembeli
+        if (currentUser.getRole().equals("pembeli")) {
+            btnTandaiLunas.setVisible(false);
+            btnTandaiSelesai.setVisible(false);
+        }
+        
         showCard("dashboard");
     }
+    
+    
     
     /*
      * Load semua data untuk dashboard (statistik + tabel)
@@ -184,6 +213,138 @@ public class FormDashboard extends javax.swing.JFrame {
         tabelUser.getColumnModel().getColumn(0).setMinWidth(0);
         tabelUser.getColumnModel().getColumn(0).setPreferredWidth(0);
         tabelUser.getColumnModel().getColumn(0).setWidth(0);
+
+    /*
+     * Load data menu ke tblMenu berdasarkan kategori
+     */
+    private void loadMenuTable(String kategori) {
+        DefaultTableModel model = (DefaultTableModel) tblMenu.getModel();
+        model.setRowCount(0);
+        
+        ArrayList<Menu> menus;
+        
+        if (kategori.equals("Semua")) {
+            menus = menuController.getMenuTersedia();
+        } else {
+            menus = menuController.getMenuByKategori(kategori);
+        }
+        
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        
+        for (Menu menu : menus) {
+            model.addRow(new Object[]{
+                menu.getId(),
+                menu.getNamaMenu(),
+                formatRupiah.format(menu.getHarga())
+            });
+        }
+    }
+    
+    /*
+     * Load data order ke tabel daftar order
+     * Admin melihat semua, pembeli hanya melihat ordernya sendiri
+     */
+    private void loadDaftarOrder() {
+        DefaultTableModel model = (DefaultTableModel) tblDaftarOrder.getModel();
+        model.setRowCount(0);
+        
+        ArrayList<Order> orders;
+        
+        if (currentUser.getRole().equals("admin")) {
+            orders = orderController.getAllOrders();
+        } else {
+            orders = orderController.getOrdersByUser(currentUser.getId());
+        }
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        
+        for (Order order : orders) {
+            model.addRow(new Object[]{
+                order.getId(),
+                order.getNomorOrder(),
+                order.getNamaPembeli(),
+                order.getLokasiPelanggan(),
+                formatRupiah.format(order.getTotalHarga()),
+                order.getStatusBayar(),
+                order.getStatusOrder(),
+                sdf.format(order.getCreatedAt())
+            });
+        }
+        
+        // Kosongkan tabel detail
+        DefaultTableModel modelDetail = (DefaultTableModel) tblDetailOrder.getModel();
+        modelDetail.setRowCount(0);
+    }
+    
+    
+    
+    /*
+     * Setup komponen di cardOrder
+     * Mengisi ComboBox lokasi dan kategori
+     */
+    private void setupCardOrder() {
+        // Isi ComboBox Lokasi
+        cmbLokasi.removeAllItems();
+        cmbLokasi.addItem("-- Pilih Lokasi --");
+        cmbLokasi.addItem("Lantai 1 - Meja A");
+        cmbLokasi.addItem("Lantai 1 - Meja B");
+        cmbLokasi.addItem("Lantai 2 - Depan Mihrab");
+        cmbLokasi.addItem("Lantai 2 - Belakang");
+        cmbLokasi.addItem("Teras Depan");
+        cmbLokasi.addItem("Teras Belakang");
+        cmbLokasi.addItem("Bawa Pulang");
+        
+        // Isi ComboBox Kategori
+        cmbKategori.removeAllItems();
+        cmbKategori.addItem("Semua");
+        cmbKategori.addItem("makanan");
+        cmbKategori.addItem("snack");
+        cmbKategori.addItem("minuman");
+        cmbKategori.addItem("box");
+        
+        // Load semua menu ke tabel
+        loadMenuTable("Semua");
+    }
+    
+    /*
+     * Refresh tampilan tabel keranjang dan total harga
+     */
+    private void refreshKeranjang() {
+        DefaultTableModel model = (DefaultTableModel) tblKeranjang.getModel();
+        model.setRowCount(0);
+        
+        totalHarga = 0;
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        
+        for (OrderDetail item : keranjang) {
+            model.addRow(new Object[]{
+                item.getIdMenu(),
+                item.getNamaMenu(),
+                formatRupiah.format(item.getHargaMenu()),
+                item.getJumlah(),
+                formatRupiah.format(item.getSubtotal())
+            });
+            totalHarga += item.getSubtotal();
+        }
+        
+        // Update label total
+        lblTotalHarga.setText(formatRupiah.format(totalHarga));
+    }
+    
+    /*
+     * Reset form order ke kondisi awal
+     */
+    private void resetFormOrder() {
+        keranjang.clear();
+        totalHarga = 0;
+        cmbLokasi.setSelectedIndex(0);
+        txtLokasiManual.setText("");
+        cmbKategori.setSelectedIndex(0);
+        spinJumlah.setValue(1);
+        refreshKeranjang();
+        loadMenuTable("Semua");
+
     }
     
     // Method untuk pindah antar card
@@ -234,7 +395,38 @@ public class FormDashboard extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         tblDashboardOrder = new javax.swing.JTable();
         cardOrder = new javax.swing.JPanel();
+        lblOrderTitle = new javax.swing.JLabel();
+        lblLokasi = new javax.swing.JLabel();
+        cmbLokasi = new javax.swing.JComboBox<>();
+        lblAtau = new javax.swing.JLabel();
+        txtLokasiManual = new javax.swing.JTextField();
+        lblKategori = new javax.swing.JLabel();
+        cmbKategori = new javax.swing.JComboBox<>();
+        lblPilihMenu = new javax.swing.JLabel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        tblMenu = new javax.swing.JTable();
+        lblJumlah = new javax.swing.JLabel();
+        spinJumlah = new javax.swing.JSpinner();
+        btnTambahKeranjang = new javax.swing.JButton();
+        lblKeranjang = new javax.swing.JLabel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        tblKeranjang = new javax.swing.JTable();
+        btnHapusItem = new javax.swing.JButton();
+        lblTotalLabel = new javax.swing.JLabel();
+        lblTotalHarga = new javax.swing.JLabel();
+        btnSubmitOrder = new javax.swing.JButton();
         cardDaftarOrder = new javax.swing.JPanel();
+        lblDaftarOrderTitle = new javax.swing.JLabel();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        tblDaftarOrder = new javax.swing.JTable();
+        btnRefreshOrder = new javax.swing.JButton();
+        btnTandaiSelesai = new javax.swing.JButton();
+        btnLihatDetail = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
+        btnTandaiLunas = new javax.swing.JButton();
+        lblDetailOrder = new javax.swing.JLabel();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        tblDetailOrder = new javax.swing.JTable();
         cardKelolaMenu = new javax.swing.JPanel();
         btnAddMenu = new javax.swing.JButton();
         scrollMenu = new javax.swing.JScrollPane();
@@ -551,9 +743,270 @@ public class FormDashboard extends javax.swing.JFrame {
         panelContent.add(cardDashboard, "dashboard");
 
         cardOrder.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        lblOrderTitle.setFont(new java.awt.Font("Arial", 1, 20)); // NOI18N
+        lblOrderTitle.setForeground(new java.awt.Color(91, 143, 123));
+        lblOrderTitle.setText("BUAT ORDER BARU");
+        cardOrder.add(lblOrderTitle, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+
+        lblLokasi.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        lblLokasi.setText("Lokasi Pengantaran :");
+        cardOrder.add(lblLokasi, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 40, -1, -1));
+
+        cmbLokasi.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cardOrder.add(cmbLokasi, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 62, 130, 20));
+
+        lblAtau.setText("atau ketik :");
+        cardOrder.add(lblAtau, new org.netbeans.lib.awtextra.AbsoluteConstraints(240, 40, -1, -1));
+        cardOrder.add(txtLokasiManual, new org.netbeans.lib.awtextra.AbsoluteConstraints(240, 60, 150, -1));
+
+        lblKategori.setText("Kategori :");
+        cardOrder.add(lblKategori, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, 60, -1));
+
+        cmbKategori.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbKategori.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbKategoriActionPerformed(evt);
+            }
+        });
+        cardOrder.add(cmbKategori, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 130, 130, -1));
+
+        lblPilihMenu.setText("Pilih Menu :");
+        cardOrder.add(lblPilihMenu, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 170, -1, -1));
+
+        tblMenu.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null},
+                {null, null, null},
+                {null, null, null},
+                {null, null, null}
+            },
+            new String [] {
+                "ID", "Nama Menu", "Harga"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane2.setViewportView(tblMenu);
+
+        cardOrder.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 190, 310, 120));
+
+        lblJumlah.setText("Jumlah :");
+        cardOrder.add(lblJumlah, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 320, -1, -1));
+
+        spinJumlah.setModel(new javax.swing.SpinnerNumberModel(1, 1, 100, 1));
+        cardOrder.add(spinJumlah, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 320, -1, -1));
+
+        btnTambahKeranjang.setBackground(new java.awt.Color(91, 143, 123));
+        btnTambahKeranjang.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
+        btnTambahKeranjang.setForeground(new java.awt.Color(255, 255, 255));
+        btnTambahKeranjang.setText("Tambah");
+        btnTambahKeranjang.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTambahKeranjangActionPerformed(evt);
+            }
+        });
+        cardOrder.add(btnTambahKeranjang, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 320, 80, 20));
+
+        lblKeranjang.setText("Keranjang :");
+        cardOrder.add(lblKeranjang, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 170, -1, -1));
+
+        tblKeranjang.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "ID", "Menu", "Harga", "Qty", "Subtotal"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane3.setViewportView(tblKeranjang);
+
+        cardOrder.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 190, 310, 120));
+
+        btnHapusItem.setBackground(new java.awt.Color(204, 0, 0));
+        btnHapusItem.setFont(new java.awt.Font("Arial", 1, 12)); // NOI18N
+        btnHapusItem.setForeground(new java.awt.Color(255, 255, 255));
+        btnHapusItem.setText("Hapus Item");
+        btnHapusItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusItemActionPerformed(evt);
+            }
+        });
+        cardOrder.add(btnHapusItem, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 320, -1, -1));
+
+        lblTotalLabel.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        lblTotalLabel.setText("Total :");
+        cardOrder.add(lblTotalLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 350, -1, -1));
+
+        lblTotalHarga.setBackground(new java.awt.Color(91, 143, 123));
+        lblTotalHarga.setFont(new java.awt.Font("Arial", 1, 16)); // NOI18N
+        lblTotalHarga.setForeground(new java.awt.Color(91, 143, 123));
+        lblTotalHarga.setText("Rp 0");
+        cardOrder.add(lblTotalHarga, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 350, -1, -1));
+
+        btnSubmitOrder.setBackground(new java.awt.Color(212, 175, 55));
+        btnSubmitOrder.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        btnSubmitOrder.setForeground(new java.awt.Color(255, 255, 255));
+        btnSubmitOrder.setText("SUBMIT ORDER");
+        btnSubmitOrder.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSubmitOrderActionPerformed(evt);
+            }
+        });
+        cardOrder.add(btnSubmitOrder, new org.netbeans.lib.awtextra.AbsoluteConstraints(240, 380, -1, 30));
+
         panelContent.add(cardOrder, "order");
 
         cardDaftarOrder.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        lblDaftarOrderTitle.setFont(new java.awt.Font("Arial", 1, 20)); // NOI18N
+        lblDaftarOrderTitle.setForeground(new java.awt.Color(91, 143, 123));
+        lblDaftarOrderTitle.setText("DAFTAR ORDER");
+        cardDaftarOrder.add(lblDaftarOrderTitle, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, 20));
+
+        tblDaftarOrder.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        tblDaftarOrder.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null, null}
+            },
+            new String [] {
+                "ID", "No Order", "Pembeli", "Lokasi", "Total", "Status Bayar", "Status Order", "Waktu"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane4.setViewportView(tblDaftarOrder);
+
+        cardDaftarOrder.add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 40, 650, 140));
+
+        btnRefreshOrder.setBackground(new java.awt.Color(91, 143, 123));
+        btnRefreshOrder.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        btnRefreshOrder.setForeground(new java.awt.Color(255, 255, 255));
+        btnRefreshOrder.setText("Refresh");
+        btnRefreshOrder.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRefreshOrderActionPerformed(evt);
+            }
+        });
+        cardDaftarOrder.add(btnRefreshOrder, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 190, -1, -1));
+
+        btnTandaiSelesai.setBackground(new java.awt.Color(125, 189, 154));
+        btnTandaiSelesai.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        btnTandaiSelesai.setForeground(new java.awt.Color(255, 255, 255));
+        btnTandaiSelesai.setText("Tandai Selesai");
+        btnTandaiSelesai.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTandaiSelesaiActionPerformed(evt);
+            }
+        });
+        cardDaftarOrder.add(btnTandaiSelesai, new org.netbeans.lib.awtextra.AbsoluteConstraints(370, 190, -1, -1));
+
+        btnLihatDetail.setBackground(new java.awt.Color(91, 143, 123));
+        btnLihatDetail.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        btnLihatDetail.setForeground(new java.awt.Color(255, 255, 255));
+        btnLihatDetail.setText("Lihat Detail");
+        btnLihatDetail.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnLihatDetailActionPerformed(evt);
+            }
+        });
+        cardDaftarOrder.add(btnLihatDetail, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 190, -1, -1));
+
+        jButton4.setText("jButton1");
+        cardDaftarOrder.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 190, -1, -1));
+
+        btnTandaiLunas.setBackground(new java.awt.Color(212, 175, 55));
+        btnTandaiLunas.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        btnTandaiLunas.setForeground(new java.awt.Color(255, 255, 255));
+        btnTandaiLunas.setText("Tandai Lunas");
+        btnTandaiLunas.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTandaiLunasActionPerformed(evt);
+            }
+        });
+        cardDaftarOrder.add(btnTandaiLunas, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 190, -1, -1));
+
+        lblDetailOrder.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        lblDetailOrder.setText("Detail Order :");
+        cardDaftarOrder.add(lblDetailOrder, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 240, -1, -1));
+
+        tblDetailOrder.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Nama Menu", "Harga", "Qty", "Subtotal"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane5.setViewportView(tblDetailOrder);
+
+        cardDaftarOrder.add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 260, 650, 170));
+
         panelContent.add(cardDaftarOrder, "daftarOrder");
 
         cardKelolaMenu.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -688,11 +1141,13 @@ public class FormDashboard extends javax.swing.JFrame {
 
     private void btnMenuDaftarOrderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMenuDaftarOrderActionPerformed
         // TODO add your handling code here:
+        loadDaftarOrder();
         showCard("daftarOrder");
     }//GEN-LAST:event_btnMenuDaftarOrderActionPerformed
 
     private void btnMenuOrderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMenuOrderActionPerformed
         // TODO add your handling code here:
+        resetFormOrder(); 
         showCard("order");
     }//GEN-LAST:event_btnMenuOrderActionPerformed
 
@@ -1172,6 +1627,254 @@ public class FormDashboard extends javax.swing.JFrame {
         e.printStackTrace();
     }
     
+
+    private void btnTambahKeranjangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahKeranjangActionPerformed
+        // TODO add your handling code here:
+        // Cek apakah ada menu yang dipilih
+        int selectedRow = tblMenu.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih menu terlebih dahulu!");
+            return;
+        }
+        
+        // Ambil data menu yang dipilih
+        int idMenu = (int) tblMenu.getValueAt(selectedRow, 0);
+        String namaMenu = (String) tblMenu.getValueAt(selectedRow, 1);
+        
+        // Ambil harga dari database (bukan dari tabel karena sudah diformat)
+        Menu menu = menuController.getMenuById(idMenu);
+        int harga = menu.getHarga();
+        
+        // Ambil jumlah dari spinner
+        int jumlah = (int) spinJumlah.getValue();
+        
+        // Hitung subtotal
+        int subtotal = harga * jumlah;
+        
+        // Cek apakah menu sudah ada di keranjang
+        boolean found = false;
+        for (OrderDetail item : keranjang) {
+            if (item.getIdMenu() == idMenu) {
+                // Update jumlah dan subtotal
+                item.setJumlah(item.getJumlah() + jumlah);
+                item.setSubtotal(item.getSubtotal() + subtotal);
+                found = true;
+                break;
+            }
+        }
+        
+        // Jika belum ada, tambah baru
+        if (!found) {
+            OrderDetail detail = new OrderDetail();
+            detail.setIdMenu(idMenu);
+            detail.setNamaMenu(namaMenu);
+            detail.setHargaMenu(harga);
+            detail.setJumlah(jumlah);
+            detail.setSubtotal(subtotal);
+            keranjang.add(detail);
+        }
+        
+        // Refresh tabel keranjang dan total
+        refreshKeranjang();
+        
+        // Reset spinner ke 1
+        spinJumlah.setValue(1);
+    }//GEN-LAST:event_btnTambahKeranjangActionPerformed
+
+    private void cmbKategoriActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbKategoriActionPerformed
+        // TODO add your handling code here:
+        String kategori = (String) cmbKategori.getSelectedItem();
+        if (kategori != null) {
+            loadMenuTable(kategori);
+        }
+    }//GEN-LAST:event_cmbKategoriActionPerformed
+
+    private void btnHapusItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusItemActionPerformed
+        // TODO add your handling code here:
+        int selectedRow = tblKeranjang.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih item yang ingin dihapus!");
+            return;
+        }
+        
+        // Hapus dari ArrayList keranjang
+        keranjang.remove(selectedRow);
+        
+        // Refresh tampilan
+        refreshKeranjang();
+    }//GEN-LAST:event_btnHapusItemActionPerformed
+
+    private void btnSubmitOrderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitOrderActionPerformed
+        // TODO add your handling code here:
+        // Validasi keranjang tidak kosong
+        if (keranjang.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Keranjang masih kosong!");
+            return;
+        }
+        
+        // Validasi lokasi
+        String lokasi = "";
+        String lokasiManual = txtLokasiManual.getText().trim();
+        
+        if (!lokasiManual.isEmpty()) {
+            lokasi = lokasiManual;
+        } else if (cmbLokasi.getSelectedIndex() > 0) {
+            lokasi = (String) cmbLokasi.getSelectedItem();
+        } else {
+            JOptionPane.showMessageDialog(this, "Pilih atau ketik lokasi pengantaran!");
+            return;
+        }
+        
+        // Konfirmasi order
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        int konfirmasi = JOptionPane.showConfirmDialog(this,
+            "Total: " + formatRupiah.format(totalHarga) + "\nLokasi: " + lokasi + "\n\nKonfirmasi order?",
+            "Konfirmasi Order",
+            JOptionPane.YES_NO_OPTION);
+        
+        if (konfirmasi == JOptionPane.YES_OPTION) {
+            // Generate nomor order
+            String nomorOrder = orderController.generateNomorOrder();
+            
+            // Buat object Order
+            Order order = new Order();
+            order.setNomorOrder(nomorOrder);
+            order.setLokasiPelanggan(lokasi);
+            order.setTotalHarga(totalHarga);
+            order.setStatusBayar("belum");
+            order.setStatusOrder("diproses");
+            order.setIdUser(currentUser.getId());
+            
+            // Simpan order ke database
+            int idOrder = orderController.insertOrder(order);
+            
+            if (idOrder > 0) {
+                // Set id_order untuk setiap item di keranjang
+                for (OrderDetail item : keranjang) {
+                    item.setIdOrder(idOrder);
+                }
+                
+                // Simpan semua detail order
+                orderDetailController.insertMultipleDetails(keranjang);
+                
+                // Tampilkan pesan sukses
+                JOptionPane.showMessageDialog(this,
+                    "Order berhasil dibuat!\nNomor Order: " + nomorOrder,
+                    "Sukses",
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+                // Reset form
+                resetFormOrder();
+                
+                // Refresh dashboard
+                loadDashboardData();
+                
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Gagal membuat order!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_btnSubmitOrderActionPerformed
+
+    private void btnLihatDetailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLihatDetailActionPerformed
+        // TODO add your handling code here:
+        int selectedRow = tblDaftarOrder.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih order terlebih dahulu!");
+            return;
+        }
+        
+        // Ambil ID order dari kolom pertama
+        int idOrder = (int) tblDaftarOrder.getValueAt(selectedRow, 0);
+        
+        // Load detail order
+        ArrayList<OrderDetail> details = orderDetailController.getDetailByOrderId(idOrder);
+        
+        DefaultTableModel model = (DefaultTableModel) tblDetailOrder.getModel();
+        model.setRowCount(0);
+        
+        NumberFormat formatRupiah = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        
+        for (OrderDetail detail : details) {
+            model.addRow(new Object[]{
+                detail.getNamaMenu(),
+                formatRupiah.format(detail.getHargaMenu()),
+                detail.getJumlah(),
+                formatRupiah.format(detail.getSubtotal())
+            });
+        }
+    }//GEN-LAST:event_btnLihatDetailActionPerformed
+
+    private void btnTandaiLunasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTandaiLunasActionPerformed
+        // TODO add your handling code here:
+        int selectedRow = tblDaftarOrder.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih order terlebih dahulu!");
+            return;
+        }
+        
+        int idOrder = (int) tblDaftarOrder.getValueAt(selectedRow, 0);
+        String statusBayar = (String) tblDaftarOrder.getValueAt(selectedRow, 5);
+        
+        // Toggle status: belum -> lunas, lunas -> belum
+        String statusBaru = statusBayar.equals("belum") ? "lunas" : "belum";
+        
+        int konfirmasi = JOptionPane.showConfirmDialog(this,
+            "Ubah status bayar menjadi '" + statusBaru + "'?",
+            "Konfirmasi",
+            JOptionPane.YES_NO_OPTION);
+        
+        if (konfirmasi == JOptionPane.YES_OPTION) {
+            if (orderController.updateStatusBayar(idOrder, statusBaru)) {
+                JOptionPane.showMessageDialog(this, "Status bayar berhasil diupdate!");
+                loadDaftarOrder();
+                loadDashboardData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Gagal update status bayar!");
+            }
+        }
+    }//GEN-LAST:event_btnTandaiLunasActionPerformed
+
+    private void btnTandaiSelesaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTandaiSelesaiActionPerformed
+        // TODO add your handling code here:
+        int selectedRow = tblDaftarOrder.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih order terlebih dahulu!");
+            return;
+        }
+        
+        int idOrder = (int) tblDaftarOrder.getValueAt(selectedRow, 0);
+        String statusOrder = (String) tblDaftarOrder.getValueAt(selectedRow, 6);
+        
+        // Pilihan status
+        String[] options = {"diproses", "selesai", "dibatalkan"};
+        String statusBaru = (String) JOptionPane.showInputDialog(this,
+            "Pilih status order:",
+            "Update Status Order",
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            statusOrder);
+        
+        if (statusBaru != null && !statusBaru.equals(statusOrder)) {
+            if (orderController.updateStatusOrder(idOrder, statusBaru)) {
+                JOptionPane.showMessageDialog(this, "Status order berhasil diupdate!");
+                loadDaftarOrder();
+                loadDashboardData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Gagal update status order!");
+            }
+        }
+    }//GEN-LAST:event_btnTandaiSelesaiActionPerformed
+
+    private void btnRefreshOrderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshOrderActionPerformed
+        // TODO add your handling code here:
+        loadDaftarOrder();
+        JOptionPane.showMessageDialog(this, "Data berhasil di-refresh!");
+    }//GEN-LAST:event_btnRefreshOrderActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -1198,10 +1901,15 @@ public class FormDashboard extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+
     private javax.swing.JButton btnAddMenu;
     private javax.swing.JButton btnAddUser;
     private javax.swing.JButton btnDeleteMenu;
     private javax.swing.JButton btnDeleteUser;
+
+    private javax.swing.JButton btnHapusItem;
+    private javax.swing.JButton btnLihatDetail;
+
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnMenuDaftarOrder;
     private javax.swing.JButton btnMenuDashboard;
@@ -1209,18 +1917,42 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JButton btnMenuKelolaUser;
     private javax.swing.JButton btnMenuLaporan;
     private javax.swing.JButton btnMenuOrder;
+
     private javax.swing.JButton btnModifyMenu;
     private javax.swing.JButton btnModifyUser;
+
+    private javax.swing.JButton btnRefreshOrder;
+    private javax.swing.JButton btnSubmitOrder;
+    private javax.swing.JButton btnTambahKeranjang;
+    private javax.swing.JButton btnTandaiLunas;
+    private javax.swing.JButton btnTandaiSelesai;
+
     private javax.swing.JPanel cardDaftarOrder;
     private javax.swing.JPanel cardDashboard;
     private javax.swing.JPanel cardKelolaMenu;
     private javax.swing.JPanel cardKelolaUser;
     private javax.swing.JPanel cardLaporan;
     private javax.swing.JPanel cardOrder;
+    private javax.swing.JComboBox<String> cmbKategori;
+    private javax.swing.JComboBox<String> cmbLokasi;
+    private javax.swing.JButton jButton4;
     private javax.swing.JScrollBar jScrollBar1;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
+    private javax.swing.JLabel lblAtau;
+    private javax.swing.JLabel lblDaftarOrderTitle;
     private javax.swing.JLabel lblDashSubtitle;
     private javax.swing.JLabel lblDashTitle;
+    private javax.swing.JLabel lblDetailOrder;
+    private javax.swing.JLabel lblJumlah;
+    private javax.swing.JLabel lblKategori;
+    private javax.swing.JLabel lblKeranjang;
+    private javax.swing.JLabel lblLokasi;
+    private javax.swing.JLabel lblOrderTitle;
+    private javax.swing.JLabel lblPilihMenu;
     private javax.swing.JLabel lblRecentTitle;
     private javax.swing.JLabel lblStatDiprosesTitle;
     private javax.swing.JLabel lblStatDiprosesValue;
@@ -1229,6 +1961,8 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JLabel lblStatPendapatanTitle;
     private javax.swing.JLabel lblStatPendapatanValue;
     private javax.swing.JLabel lblTitleHeader;
+    private javax.swing.JLabel lblTotalHarga;
+    private javax.swing.JLabel lblTotalLabel;
     private javax.swing.JLabel lblWelcome;
     private javax.swing.JPanel panelContent;
     private javax.swing.JPanel panelHeader;
@@ -1236,10 +1970,19 @@ public class FormDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel panelStatDiproses;
     private javax.swing.JPanel panelStatOrder;
     private javax.swing.JPanel panelStatPendapatan;
+
     private javax.swing.JScrollPane scrollMenu;
     private javax.swing.JScrollPane scrollUser;
     private javax.swing.JTable tabelMenu;
     private javax.swing.JTable tabelUser;
+
+    private javax.swing.JSpinner spinJumlah;
+    private javax.swing.JTable tblDaftarOrder;
+
     private javax.swing.JTable tblDashboardOrder;
+    private javax.swing.JTable tblDetailOrder;
+    private javax.swing.JTable tblKeranjang;
+    private javax.swing.JTable tblMenu;
+    private javax.swing.JTextField txtLokasiManual;
     // End of variables declaration//GEN-END:variables
 }
